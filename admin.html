@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QozonHub | Markaziy Boshqaruv Paneli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --orange: #ff8c00; --dark: #121212; --bg: #f0f2f5; --danger: #ff4d4d; --success: #2ecc71; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; }
+        body { display: flex; background: var(--bg); height: 100vh; overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar { width: 280px; background: var(--dark); color: white; padding: 30px 15px; flex-shrink: 0; display: flex; flex-direction: column; }
+        .sidebar-logo { font-size: 1.8rem; font-weight: 800; color: var(--orange); text-align: center; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 15px; }
+        .nav-menu { list-style: none; flex-grow: 1; }
+        .nav-item { padding: 15px 20px; cursor: pointer; border-radius: 12px; margin-bottom: 8px; transition: 0.3s; display: flex; align-items: center; gap: 12px; font-weight: 600; }
+        .nav-item:hover { background: rgba(255, 140, 0, 0.1); }
+        .nav-item.active { background: var(--orange); color: white; }
+        
+        .btn-reset { background: var(--danger); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700; margin-top: 20px; width: 100%; }
+
+        /* MAIN CONTENT */
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+
+        /* SECTIONS */
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: fadeIn 0.4s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* STATS */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid var(--orange); }
+        .stat-card h3 { font-size: 0.9rem; color: #777; margin-bottom: 8px; }
+        .stat-card p { font-size: 1.6rem; font-weight: 700; }
+
+        /* CONTENT CARDS */
+        .content-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { text-align: left; padding: 14px; border-bottom: 1px solid #eee; }
+        th { color: #888; font-size: 0.8rem; text-transform: uppercase; }
+
+        /* BADGES */
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .badge-table { background: #eee; color: #333; }
+        .badge-status { background: var(--orange); color: white; }
+
+        /* FORM */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .btn-add { background: var(--orange); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; }
+        .btn-done { background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-logo">QozonHub</div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('dashboard', this)"><span>📊</span> Boshqaruv</li>
+            <li class="nav-item" onclick="switchTab('menu-editor', this)"><span>🍳</span> Taomlar tahriri</li>
+            <li class="nav-item" onclick="switchTab('orders', this)"><span>📋</span> Buyurtmalar <b id="order-count-badge" style="background:red; color:white; border-radius:50%; padding:2px 7px; font-size:10px; margin-left:5px; display:none;">0</b></li>
+        </ul>
+        <button class="btn-reset" onclick="resetSystem()">🗑️ Tizimni Nollash</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1 id="tab-title">📊 Boshqaruv</h1>
+            <div style="font-weight: 600; color: #888;">Admin: Choriyev Diyorbek</div>
+        </div>
+
+        <div id="dashboard" class="admin-section active">
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Jami Taomlar</h3><p id="stat-foods">0</p></div>
+                <div class="stat-card"><h3>Faol Buyurtmalar</h3><p id="stat-orders">0</p></div>
+                <div class="stat-card"><h3>Bugungi Stol Bandligi</h3><p id="stat-tables">0/30</p></div>
+            </div>
+            <div class="content-card">
+                <h3>Tizim Holati</h3>
+                <p id="status-msg" style="margin-top: 10px; color: #666;">Barcha planshetlar ulanishga tayyor.</p>
+            </div>
+        </div>
+
+        <div id="menu-editor" class="admin-section">
+            <div class="content-card">
+                <h3>Yangi taom qo'shish</h3>
+                <div class="form-grid">
+                    <input type="text" id="food-name" placeholder="Taom nomi">
+                    <select id="food-cat">
+                        <option value="Milliy">Milliy Taomlar</option>
+                        <option value="Salat">Salatlar</option>
+                        <option value="Ichimlik">Ichimliklar</option>
+                    </select>
+                    <input type="number" id="food-price" placeholder="Narxi (UZS)">
+                    <button class="btn-add" onclick="addMenu()">Saqlash</button>
+                </div>
+                <h3>Mavjud Menyu</h3>
+                <table id="menu-table">
+                    <thead><tr><th>Nomi</th><th>Kategoriya</th><th>Narxi</th><th>Amal</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="orders" class="admin-section">
+            <div class="content-card">
+                <h3>Kelib tushgan buyurtmalar</h3>
+                <table id="order-table">
+                    <thead><tr><th>Stol</th><th>Taom</th><th>Vaqt</th><th>Amal</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MA'LUMOTLARNI YUKLASH
+        let menu = JSON.parse(localStorage.getItem('qozonhub_menu')) || [];
+        let orders = JSON.parse(localStorage.getItem('qozonhub_orders')) || [];
+
+        function switchTab(id, el) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('tab-title').innerText = el.innerText;
+            updateUI();
+        }
+
+        // TAOM QO'SHISH
+        function addMenu() {
+            const name = document.getElementById('food-name').value;
+            const cat = document.getElementById('food-cat').value;
+            const price = document.getElementById('food-price').value;
+            if(!name || !price) return alert("To'ldiring!");
+
+            menu.push({ id: Date.now(), name, cat, price });
+            localStorage.setItem('qozonhub_menu', JSON.stringify(menu));
+            document.getElementById('food-name').value = '';
+            document.getElementById('food-price').value = '';
+            updateUI();
+        }
+
+        function deleteFood(id) {
+            menu = menu.filter(f => f.id !== id);
+            localStorage.setItem('qozonhub_menu', JSON.stringify(menu));
+            updateUI();
+        }
+
+        // BUYURTMALARNI BOSHQARISH
+        function finishOrder(index) {
+            orders.splice(index, 1);
+            localStorage.setItem('qozonhub_orders', JSON.stringify(orders));
+            updateUI();
+        }
+
+        function resetSystem() {
+            if(confirm("Haqiqatan ham hamma narsani (menyu va buyurtmalar) o'chirmoqchimisiz?")) {
+                localStorage.clear();
+                menu = []; orders = [];
+                updateUI();
+            }
+        }
+
+        // INTERFEYSNI YANGILASH
+        function updateUI() {
+            // Menyu jadvali
+            const mTable = document.querySelector('#menu-table tbody');
+            mTable.innerHTML = menu.map(f => `
+                <tr>
+                    <td><b>${f.name}</b></td>
+                    <td>${f.cat}</td>
+                    <td>${Number(f.price).toLocaleString()} UZS</td>
+                    <td><button onclick="deleteFood(${f.id})" style="color:red; background:none; border:none; cursor:pointer;">O'chirish</button></td>
+                </tr>
+            `).join('');
+
+            // Buyurtma jadvali
+            const oTable = document.querySelector('#order-table tbody');
+            oTable.innerHTML = orders.map((o, index) => `
+                <tr>
+                    <td><span class="badge badge-table">${o.table}-stol</span></td>
+                    <td><b>${o.food}</b></td>
+                    <td>${o.time}</td>
+                    <td><button class="btn-done" onclick="finishOrder(${index})">Tayyor ✅</button></td>
+                </tr>
+            `).join('');
+
+            // Statistika
+            document.getElementById('stat-foods').innerText = menu.length + " ta";
+            document.getElementById('stat-orders').innerText = orders.length + " ta";
+            
+            // Unikal stollar sonini hisoblash
+            const activeTables = [...new Set(orders.map(o => o.table))].length;
+            document.getElementById('stat-tables').innerText = activeTables + "/30";
+
+            // Bildirishnoma (badge)
+            const badge = document.getElementById('order-count-badge');
+            if(orders.length > 0) {
+                badge.innerText = orders.length;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // PLANSHEETLAR BILAN BOG'LANISH (Simulation)
+        // Har 2 soniyada bazani tekshirib turadi (Planshetdan ma'lumot tushsa darhol ko'rinadi)
+        setInterval(() => {
+            orders = JSON.parse(localStorage.getItem('qozonhub_orders')) || [];
+            updateUI();
+        }, 2000);
+
+        updateUI();
+    </script>
+</body>
+</html>
